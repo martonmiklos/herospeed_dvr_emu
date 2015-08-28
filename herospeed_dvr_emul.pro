@@ -9,7 +9,7 @@ QT       += core gui network
 OBJECTS_DIR = build
 MOC_DIR = build
 UI_DIR = build
-RCC_DIR=build
+RCC_DIR = build
 
 DESTDIR = bin
 

@@ -14,6 +14,7 @@ class Client {
 public:
     int id;
     QTcpSocket *socket;
+    QByteArray buffer;
     int state;
 };
 
@@ -37,6 +38,8 @@ private:
     QSignalMapper m_disconnectMapper, m_dataReadyMapper;
 
     QList<Client*> m_clients;
+
+    void logString(QString str);
 };
 
 #endif // MAINWINDOW_H

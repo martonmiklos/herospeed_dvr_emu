@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include <QScrollBar>
 
 char peer1_0[] = {
 0x00, 0x00, 0x01, 0x01, 0x01, 0x01, 0x00, 0x00,
@@ -62,7 +63,7 @@ void MainWindow::newConnection()
         connect(&m_dataReadyMapper, SIGNAL(mapped(int)), this, SLOT(socketDataReady(int)));
 
         m_clients.append(client);
-        qWarning() << "new client";
+        logString("New client");
     }
 }
 
@@ -72,20 +73,37 @@ void MainWindow::socketDataReady(int id)
         if (client->id == id) {
             switch (client->state) {
             case 0:
-                client->socket->write(peer1_0, sizeof(peer1_0));
+                qWarning()  << client->socket->bytesAvailable();
+                if (client->socket->bytesAvailable() >= 32) {
+                    client->socket->write(peer1_0, sizeof(peer1_0));
+                    client->state = 1;
+                }
                 break;
             case 1: {
-                QByteArray data = client->socket->readAll();
-                client->socket->write(peer1_0, sizeof(peer1_1));
-                client->socket->close();
+                qWarning()  << client->socket->bytesAvailable();
+                if (client->socket->bytesAvailable() >= 108) {
+                    QByteArray data = client->socket->readAll();
+                    QString userName = data.mid(0x20, 32);
+                    logString(tr("Got data %1 bytes").arg(data.size()));
+                    logString(tr("User %1").arg(userName));
+                    logString("Hash:");
+                    logString(data.mid(0x40, 8).toHex());
+                    logString(data.mid(0x40 + 8, 8).toHex());
+                    logString(data.mid(0x40 + 16, 8).toHex());
+                    logString(data.mid(0x40 + 24, 8).toHex());
+                    logString(data.mid(0x40 + 32, 8).toHex());
+                    logString(data.mid(0x40 + 40, 8).toHex());
+                    logString(data.mid(0x40 + 48, 8).toHex());
+                    logString(data.mid(0x40 + 56, 8).toHex());
+                    client->socket->write(peer1_0, sizeof(peer1_1));
+                    client->state++;
+                    client->socket->close();
+                }
             } break;
             default:
                 client->socket->close();
                 break;
             }
-            qWarning() << "client state" << client->state;
-            client->state++;
-            client->socket->readAll();
             break;
         }
     }
@@ -94,6 +112,14 @@ void MainWindow::socketDataReady(int id)
 void MainWindow::socketClosed(int id)
 {
     // FIXME delete connection
+}
+
+void MainWindow::logString(QString str)
+{
+    ui->textBrowser->append(str);
+    QScrollBar *sb = ui->textBrowser->verticalScrollBar();
+    sb->setValue(sb->maximum());
+    qDebug() << str;
 }
 
 MainWindow::~MainWindow()
